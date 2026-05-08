@@ -50,6 +50,14 @@ if not st.session_state.authenticated:
 # LOAD DATA
 # =========================
 transactions_df = get_transactions()
+
+if not transactions_df.empty:
+
+    transactions_df["amount"] = pd.to_numeric(
+        transactions_df["amount"],
+        errors="coerce",
+    ).fillna(0)
+    
 transaction_names_df = get_transaction_names()
 budget_df = get_budget_data()
 
