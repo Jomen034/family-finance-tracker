@@ -1,3 +1,4 @@
+```
 finance-tracker/
 │
 ├── app.py
@@ -19,3 +20,4 @@ finance-tracker/
     ├── transactions.py
     ├── budgeting.py
     └── analytics.py
+```
