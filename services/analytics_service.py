@@ -8,10 +8,16 @@ def daily_summary(df):
     if df.empty:
         return pd.DataFrame()
 
-    df["date"] = pd.to_datetime(df["date"])
+    temp_df = df.copy()
+
+    temp_df["date"] = pd.to_datetime(
+        temp_df["date"]
+    )
 
     result = (
-        df.groupby(df["date"].dt.date)["amount"]
+        temp_df.groupby(
+            temp_df["date"].dt.date
+        )["amount"]
         .sum()
         .reset_index()
     )
@@ -24,12 +30,22 @@ def weekly_summary(df):
     if df.empty:
         return pd.DataFrame()
 
-    df["date"] = pd.to_datetime(df["date"])
+    temp_df = df.copy()
 
-    df["week"] = df["date"].dt.isocalendar().week
+    temp_df["date"] = pd.to_datetime(
+        temp_df["date"]
+    )
+
+    temp_df["week"] = (
+        temp_df["date"]
+        .dt.isocalendar()
+        .week
+    )
 
     result = (
-        df.groupby("week")["amount"]
+        temp_df.groupby("week")[
+            "amount"
+        ]
         .sum()
         .reset_index()
     )
@@ -42,12 +58,22 @@ def monthly_summary(df):
     if df.empty:
         return pd.DataFrame()
 
-    df["date"] = pd.to_datetime(df["date"])
+    temp_df = df.copy()
 
-    df["month"] = df["date"].dt.to_period("M")
+    temp_df["date"] = pd.to_datetime(
+        temp_df["date"]
+    )
+
+    temp_df["month"] = (
+        temp_df["date"]
+        .dt.to_period("M")
+        .astype(str)
+    )
 
     result = (
-        df.groupby("month")["amount"]
+        temp_df.groupby("month")[
+            "amount"
+        ]
         .sum()
         .reset_index()
     )
@@ -55,27 +81,55 @@ def monthly_summary(df):
     return result
 
 
-def budget_vs_actual(transactions_df, budget_df):
+def budget_vs_actual(
+    transactions_df,
+    budget_df,
+):
+
+    if (
+        transactions_df.empty
+        or budget_df.empty
+    ):
+        return pd.DataFrame()
 
     expense_df = transactions_df[
-        transactions_df["category"] == "expense"
+        transactions_df["category"]
+        == "expense"
     ]
 
     actual = (
-        expense_df.groupby("transaction_name")["amount"]
+        expense_df.groupby("name")[
+            "amount"
+        ]
         .sum()
         .reset_index()
     )
 
     merged = actual.merge(
         budget_df,
-        left_on="transaction_name",
+        left_on="name",
         right_on="category",
         how="left",
     )
 
+    merged["monthly_budget"] = (
+        pd.to_numeric(
+            merged["monthly_budget"],
+            errors="coerce",
+        ).fillna(0)
+    )
+
     merged["usage_percentage"] = (
-        merged["amount"] / merged["monthly_budget"]
-    ) * 100
+        (
+            merged["amount"]
+            / merged["monthly_budget"]
+        )
+        * 100
+    ).fillna(0)
+
+    merged["usage_percentage"] = (
+        merged["usage_percentage"]
+        .round(2)
+    )
 
     return merged
