@@ -48,11 +48,20 @@ def get_transactions():
 
     df = pd.DataFrame(data)
 
+    df["amount"] = (
+        df["amount"]
+        .astype(str)
+        .str.replace("Rp", "", regex=False)
+        .str.replace(".", "", regex=False)
+        .str.replace(",", "", regex=False)
+        .str.strip()
+    )
+
     df["amount"] = pd.to_numeric(
         df["amount"],
         errors="coerce",
     ).fillna(0)
-
+    
     return df
 
 
