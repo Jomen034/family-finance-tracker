@@ -362,10 +362,23 @@ elif page == "Budgeting":
             use_container_width=True,
         )
 
+    st.divider()
+
+    st.subheader("Add / Update Budget")
+
+    if transaction_names_df.empty:
+
+        st.warning(
+            "No transaction names available."
+        )
+
+        st.stop()
+
     with st.form("budget_form"):
 
-        category = st.text_input(
-            "Category"
+        selected_name = st.selectbox(
+            "Transaction Name",
+            transaction_names_df["name"].tolist(),
         )
 
         monthly_budget = st.number_input(
@@ -383,7 +396,7 @@ elif page == "Budgeting":
         if budget_submit:
 
             update_budget_data(
-                category,
+                selected_name,
                 int(monthly_budget),
             )
 
