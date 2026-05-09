@@ -2,6 +2,7 @@
 
 import streamlit as st
 import pandas as pd
+import time
 from datetime import datetime
 
 from services.sheets_service import (
@@ -215,7 +216,7 @@ elif page == "Add Transaction":
             st.success(
                 "Transaction added successfully!"
             )
-
+            time.sleep(1.5)
             st.rerun()
 
 # =========================
@@ -336,7 +337,7 @@ elif page == "Edit Transaction":
             st.success(
                 "Transaction updated successfully!"
             )
-
+            time.sleep(1.5)
             st.rerun()
 
 # =========================
@@ -403,7 +404,7 @@ elif page == "Budgeting":
             st.success(
                 "Budget updated!"
             )
-
+            time.sleep(1.5)
             st.rerun()
 
 # =========================
