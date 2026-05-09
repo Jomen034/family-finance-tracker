@@ -92,8 +92,43 @@ def budget_vs_actual(
     ):
         return pd.DataFrame()
 
-    expense_df = transactions_df[
-        transactions_df["category"]
+    expense_df = transactions_df.copy()
+
+    required_transaction_cols = [
+        "name",
+        "category",
+        "amount",
+    ]
+
+    missing_transaction_cols = [
+        col
+        for col in required_transaction_cols
+        if col not in expense_df.columns
+    ]
+
+    if missing_transaction_cols:
+        raise Exception(
+            f"Missing transaction columns: {missing_transaction_cols}"
+        )
+
+    required_budget_cols = [
+        "name",
+        "monthly_budget",
+    ]
+
+    missing_budget_cols = [
+        col
+        for col in required_budget_cols
+        if col not in budget_df.columns
+    ]
+
+    if missing_budget_cols:
+        raise Exception(
+            f"Missing budget columns: {missing_budget_cols}"
+        )
+
+    expense_df = expense_df[
+        expense_df["category"]
         == "expense"
     ]
 
@@ -105,18 +140,22 @@ def budget_vs_actual(
         .reset_index()
     )
 
+    budget_df["monthly_budget"] = (
+        pd.to_numeric(
+            budget_df["monthly_budget"],
+            errors="coerce",
+        ).fillna(0)
+    )
+
     merged = actual.merge(
         budget_df,
-        left_on="name",
-        right_on="category",
+        on="name",
         how="left",
     )
 
     merged["monthly_budget"] = (
-        pd.to_numeric(
-            merged["monthly_budget"],
-            errors="coerce",
-        ).fillna(0)
+        merged["monthly_budget"]
+        .fillna(0)
     )
 
     merged["usage_percentage"] = (
@@ -125,6 +164,9 @@ def budget_vs_actual(
             / merged["monthly_budget"]
         )
         * 100
+    ).replace(
+        [float("inf")],
+        0,
     ).fillna(0)
 
     merged["usage_percentage"] = (
