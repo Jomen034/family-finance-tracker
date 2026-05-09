@@ -30,22 +30,30 @@ budget_sheet = spreadsheet.worksheet("budgeting")
 
 
 def get_transactions():
+
     data = transactions_sheet.get_all_records()
 
-    if not data:
-        return pd.DataFrame(
-            columns=[
-                "id",
-                "date",
-                "transaction_name",
-                "category",
-                "amount",
-                "description",
-                "created_at",
-            ]
-        )
+    expected_columns = [
+        "id",
+        "date",
+        "transaction_name",
+        "category",
+        "amount",
+        "description",
+        "created_at",
+    ]
 
-    return pd.DataFrame(data)
+    if not data:
+        return pd.DataFrame(columns=expected_columns)
+
+    df = pd.DataFrame(data)
+
+    df["amount"] = pd.to_numeric(
+        df["amount"],
+        errors="coerce",
+    ).fillna(0)
+
+    return df
 
 
 def add_transaction(data):
