@@ -18,9 +18,9 @@ SCOPES = [
 # GOOGLE AUTH
 # =========================
 
-creds_dict = json.loads(
-    st.secrets["gcp"]["credentials"]
-)
+creds_dict = st.secrets[
+    "gcp_service_account"
+]
 
 creds = Credentials.from_service_account_info(
     creds_dict,
