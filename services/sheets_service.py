@@ -96,7 +96,6 @@ def get_transactions():
             f"Missing columns in transactions sheet: {missing_cols}"
         )
 
-    # CLEAN AMOUNT
     df["amount"] = (
         df["amount"]
         .astype(str)
@@ -118,7 +117,6 @@ def get_transactions():
         .str.strip()
     )
 
-    # TO NUMERIC
     df["amount"] = pd.to_numeric(
         df["amount"],
         errors="coerce",
@@ -230,7 +228,7 @@ def get_budget_data():
     data = budget_sheet.get_all_records()
 
     expected_columns = [
-        "category",
+        "name",
         "monthly_budget",
     ]
 
@@ -240,6 +238,17 @@ def get_budget_data():
         )
 
     df = pd.DataFrame(data)
+
+    missing_cols = [
+        col
+        for col in expected_columns
+        if col not in df.columns
+    ]
+
+    if missing_cols:
+        raise Exception(
+            f"Missing columns in budgeting sheet: {missing_cols}"
+        )
 
     df["monthly_budget"] = (
         pd.to_numeric(
@@ -252,7 +261,7 @@ def get_budget_data():
 
 
 def update_budget_data(
-    category,
+    name,
     monthly_budget,
 ):
 
@@ -267,10 +276,7 @@ def update_budget_data(
         start=2,
     ):
 
-        if (
-            record["category"]
-            == category
-        ):
+        if record["name"] == name:
 
             budget_sheet.update(
                 f"B{idx}",
@@ -284,7 +290,7 @@ def update_budget_data(
 
         budget_sheet.append_row(
             [
-                category,
+                name,
                 int(monthly_budget),
             ]
         )
