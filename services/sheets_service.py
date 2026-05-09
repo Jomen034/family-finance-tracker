@@ -7,9 +7,7 @@ import gspread
 import pandas as pd
 import streamlit as st
 
-from google.oauth2.service_account import (
-    Credentials,
-)
+from google.oauth2.service_account import Credentials
 
 SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
@@ -35,27 +33,17 @@ client = gspread.authorize(creds)
 # SPREADSHEET
 # =========================
 
-SPREADSHEET_NAME = st.secrets[
-    "sheets"
-]["spreadsheet_name"]
+SPREADSHEET_NAME = st.secrets["sheets"]["spreadsheet_name"]
 
-spreadsheet = client.open(
-    SPREADSHEET_NAME
+spreadsheet = client.open(SPREADSHEET_NAME)
+
+transactions_sheet = spreadsheet.worksheet("transactions")
+
+transaction_names_sheet = spreadsheet.worksheet(
+    "master_transaction_names"
 )
 
-transactions_sheet = spreadsheet.worksheet(
-    "transactions"
-)
-
-transaction_names_sheet = (
-    spreadsheet.worksheet(
-        "master_transaction_names"
-    )
-)
-
-budget_sheet = spreadsheet.worksheet(
-    "budgeting"
-)
+budget_sheet = spreadsheet.worksheet("budgeting")
 
 # =========================
 # TRANSACTIONS
@@ -64,9 +52,7 @@ budget_sheet = spreadsheet.worksheet(
 
 def get_transactions():
 
-    data = (
-        transactions_sheet.get_all_records()
-    )
+    data = transactions_sheet.get_all_records()
 
     expected_columns = [
         "id",
@@ -79,15 +65,15 @@ def get_transactions():
     ]
 
     if not data:
-        return pd.DataFrame(
-            columns=expected_columns
-        )
+        return pd.DataFrame(columns=expected_columns)
 
     df = pd.DataFrame(data)
 
+    # CLEAN COLUMN NAMES
+    df.columns = df.columns.str.strip()
+
     missing_cols = [
-        col
-        for col in expected_columns
+        col for col in expected_columns
         if col not in df.columns
     ]
 
@@ -96,27 +82,17 @@ def get_transactions():
             f"Missing columns in transactions sheet: {missing_cols}"
         )
 
+    # CLEAN AMOUNT
     df["amount"] = (
         df["amount"]
         .astype(str)
-        .str.replace(
-            "Rp",
-            "",
-            regex=False,
-        )
-        .str.replace(
-            ".",
-            "",
-            regex=False,
-        )
-        .str.replace(
-            ",",
-            "",
-            regex=False,
-        )
+        .str.replace("Rp", "", regex=False)
+        .str.replace(".", "", regex=False)
+        .str.replace(",", "", regex=False)
         .str.strip()
     )
 
+    # TO NUMERIC
     df["amount"] = pd.to_numeric(
         df["amount"],
         errors="coerce",
@@ -126,6 +102,25 @@ def get_transactions():
 
 
 def add_transaction(data):
+
+    required_keys = [
+        "date",
+        "name",
+        "category",
+        "amount",
+        "description",
+        "created_at",
+    ]
+
+    missing_keys = [
+        key for key in required_keys
+        if key not in data
+    ]
+
+    if missing_keys:
+        raise Exception(
+            f"Missing keys in add_transaction(): {missing_keys}"
+        )
 
     row = [
         str(uuid.uuid4()),
@@ -145,9 +140,25 @@ def update_transaction(
     updated_data,
 ):
 
-    records = (
-        transactions_sheet.get_all_records()
-    )
+    required_keys = [
+        "date",
+        "name",
+        "category",
+        "amount",
+        "description",
+    ]
+
+    missing_keys = [
+        key for key in required_keys
+        if key not in updated_data
+    ]
+
+    if missing_keys:
+        raise Exception(
+            f"Missing keys in update_transaction(): {missing_keys}"
+        )
+
+    records = transactions_sheet.get_all_records()
 
     for idx, record in enumerate(
         records,
@@ -158,23 +169,13 @@ def update_transaction(
 
             transactions_sheet.update(
                 f"B{idx}:F{idx}",
-                [
-                    [
-                        updated_data["date"],
-                        updated_data["name"],
-                        updated_data[
-                            "category"
-                        ],
-                        int(
-                            updated_data[
-                                "amount"
-                            ]
-                        ),
-                        updated_data[
-                            "description"
-                        ],
-                    ]
-                ],
+                [[
+                    updated_data["date"],
+                    updated_data["name"],
+                    updated_data["category"],
+                    int(updated_data["amount"]),
+                    updated_data["description"],
+                ]]
             )
 
             break
@@ -187,9 +188,7 @@ def update_transaction(
 
 def get_transaction_names():
 
-    data = (
-        transaction_names_sheet.get_all_records()
-    )
+    data = transaction_names_sheet.get_all_records()
 
     expected_columns = [
         "id",
@@ -198,15 +197,14 @@ def get_transaction_names():
     ]
 
     if not data:
-        return pd.DataFrame(
-            columns=expected_columns
-        )
+        return pd.DataFrame(columns=expected_columns)
 
     df = pd.DataFrame(data)
 
+    df.columns = df.columns.str.strip()
+
     missing_cols = [
-        col
-        for col in expected_columns
+        col for col in expected_columns
         if col not in df.columns
     ]
 
@@ -233,15 +231,14 @@ def get_budget_data():
     ]
 
     if not data:
-        return pd.DataFrame(
-            columns=expected_columns
-        )
+        return pd.DataFrame(columns=expected_columns)
 
     df = pd.DataFrame(data)
 
+    df.columns = df.columns.str.strip()
+
     missing_cols = [
-        col
-        for col in expected_columns
+        col for col in expected_columns
         if col not in df.columns
     ]
 
@@ -250,12 +247,10 @@ def get_budget_data():
             f"Missing columns in budgeting sheet: {missing_cols}"
         )
 
-    df["monthly_budget"] = (
-        pd.to_numeric(
-            df["monthly_budget"],
-            errors="coerce",
-        ).fillna(0)
-    )
+    df["monthly_budget"] = pd.to_numeric(
+        df["monthly_budget"],
+        errors="coerce",
+    ).fillna(0)
 
     return df
 
@@ -265,9 +260,7 @@ def update_budget_data(
     monthly_budget,
 ):
 
-    records = (
-        budget_sheet.get_all_records()
-    )
+    records = budget_sheet.get_all_records()
 
     found = False
 
@@ -288,9 +281,7 @@ def update_budget_data(
 
     if not found:
 
-        budget_sheet.append_row(
-            [
-                name,
-                int(monthly_budget),
-            ]
-        )
+        budget_sheet.append_row([
+            name,
+            int(monthly_budget),
+        ])
