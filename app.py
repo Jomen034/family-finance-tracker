@@ -167,7 +167,10 @@ elif page == "Add Transaction":
         )
         st.stop()
 
-    with st.form("add_transaction_form"):
+    with st.form(
+        "add_transaction_form",
+        clear_on_submit=True,
+    ):
 
         date = st.date_input("Date")
 
@@ -375,7 +378,10 @@ elif page == "Budgeting":
 
         st.stop()
 
-    with st.form("budget_form"):
+    with st.form(
+        "budget_form",
+        clear_on_submit=True,
+    ):
 
         selected_name = st.selectbox(
             "Transaction Name",
