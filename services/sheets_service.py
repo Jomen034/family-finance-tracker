@@ -52,6 +52,10 @@ budget_sheet = spreadsheet.worksheet(
     "budgeting"
 )
 
+account_sheet = spreadsheet.worksheet(
+    "account"
+)
+
 # =========================
 # TRANSACTIONS
 # =========================
