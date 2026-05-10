@@ -337,7 +337,6 @@ def update_budget_data(
         start=2,
     ):
 
-        # CLEAN KEY
         record_name = (
             str(record["name"])
             .strip()
@@ -345,9 +344,11 @@ def update_budget_data(
 
         if record_name == str(name).strip():
 
-            budget_sheet.update(
-                f"B{idx}",
-                [[int(monthly_budget)]],
+            # UPDATE SINGLE CELL
+            budget_sheet.update_cell(
+                idx,
+                2,
+                int(monthly_budget),
             )
 
             found = True
