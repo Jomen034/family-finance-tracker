@@ -216,6 +216,7 @@ elif page == "Add Transaction":
                 }
             )
 
+            st.cache_data.clear()
             st.success(
                 "Transaction added successfully!"
             )
