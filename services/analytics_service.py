@@ -1,18 +1,16 @@
 # services/analytics_service.py
 
 import pandas as pd
+import streamlit as st
 
 
+@st.cache_data(ttl=30)
 def daily_summary(df):
 
     if df.empty:
         return pd.DataFrame()
 
     temp_df = df.copy()
-
-    temp_df["date"] = pd.to_datetime(
-        temp_df["date"]
-    )
 
     result = (
         temp_df.groupby(
@@ -25,16 +23,13 @@ def daily_summary(df):
     return result
 
 
+@st.cache_data(ttl=30)
 def weekly_summary(df):
 
     if df.empty:
         return pd.DataFrame()
 
     temp_df = df.copy()
-
-    temp_df["date"] = pd.to_datetime(
-        temp_df["date"]
-    )
 
     temp_df["week"] = (
         temp_df["date"]
@@ -53,16 +48,13 @@ def weekly_summary(df):
     return result
 
 
+@st.cache_data(ttl=30)
 def monthly_summary(df):
 
     if df.empty:
         return pd.DataFrame()
 
     temp_df = df.copy()
-
-    temp_df["date"] = pd.to_datetime(
-        temp_df["date"]
-    )
 
     temp_df["month"] = (
         temp_df["date"]
@@ -81,6 +73,7 @@ def monthly_summary(df):
     return result
 
 
+@st.cache_data(ttl=30)
 def budget_vs_actual(
     transactions_df,
     budget_df,
