@@ -78,16 +78,15 @@ def get_transactions():
     ]
 
     if not data:
+
         return pd.DataFrame(
             columns=expected_columns
         )
 
     df = pd.DataFrame(data)
 
-    # CLEAN COLUMN NAMES
     df.columns = (
-        df.columns
-        .str.strip()
+        df.columns.str.strip()
     )
 
     missing_cols = [
@@ -97,6 +96,7 @@ def get_transactions():
     ]
 
     if missing_cols:
+
         raise Exception(
             f"Missing columns in transactions sheet: {missing_cols}"
         )
@@ -123,13 +123,12 @@ def get_transactions():
         .str.strip()
     )
 
-    # TO NUMERIC
     df["amount"] = pd.to_numeric(
         df["amount"],
         errors="coerce",
     ).fillna(0)
 
-    # DATE PARSING
+    # DATE
     df["date"] = pd.to_datetime(
         df["date"],
         errors="coerce",
@@ -157,6 +156,7 @@ def add_transaction(data):
     ]
 
     if missing_keys:
+
         raise Exception(
             f"Missing keys in add_transaction(): {missing_keys}"
         )
@@ -176,7 +176,6 @@ def add_transaction(data):
         row
     )
 
-    # CLEAR CACHE
     st.cache_data.clear()
 
 
@@ -192,7 +191,6 @@ def update_transaction(
         "account",
         "amount",
         "description",
-        "created_at",
     ]
 
     missing_keys = [
@@ -202,6 +200,7 @@ def update_transaction(
     ]
 
     if missing_keys:
+
         raise Exception(
             f"Missing keys in update_transaction(): {missing_keys}"
         )
@@ -225,14 +224,15 @@ def update_transaction(
                     updated_data["name"],
                     updated_data["category"],
                     updated_data["account"],
-                    int(updated_data["amount"]),
+                    int(
+                        updated_data["amount"]
+                    ),
                     updated_data["description"],
                 ]]
             )
 
             break
 
-    # CLEAR CACHE
     st.cache_data.clear()
 
 
@@ -256,6 +256,7 @@ def get_transaction_names():
     ]
 
     if not data:
+
         return pd.DataFrame(
             columns=expected_columns
         )
@@ -263,20 +264,8 @@ def get_transaction_names():
     df = pd.DataFrame(data)
 
     df.columns = (
-        df.columns
-        .str.strip()
+        df.columns.str.strip()
     )
-
-    missing_cols = [
-        col
-        for col in expected_columns
-        if col not in df.columns
-    ]
-
-    if missing_cols:
-        raise Exception(
-            f"Missing columns in master_transaction_names sheet: {missing_cols}"
-        )
 
     return df
 
@@ -297,6 +286,7 @@ def get_budget_data():
     ]
 
     if not data:
+
         return pd.DataFrame(
             columns=expected_columns
         )
@@ -304,20 +294,8 @@ def get_budget_data():
     df = pd.DataFrame(data)
 
     df.columns = (
-        df.columns
-        .str.strip()
+        df.columns.str.strip()
     )
-
-    missing_cols = [
-        col
-        for col in expected_columns
-        if col not in df.columns
-    ]
-
-    if missing_cols:
-        raise Exception(
-            f"Missing columns in budgeting sheet: {missing_cols}"
-        )
 
     df["monthly_budget"] = (
         pd.to_numeric(
@@ -347,43 +325,41 @@ def update_budget_data(
         start=2,
     ):
 
-        record_name = (
-            str(record["name"])
-            .strip()
-        )
+        if record["name"] == name:
 
-        if record_name == str(name).strip():
-
-            # UPDATE SINGLE CELL
-            budget_sheet.update_cell(
-                idx,
-                2,
-                int(monthly_budget),
+            budget_sheet.update(
+                f"B{idx}",
+                [[
+                    int(monthly_budget)
+                ]]
             )
 
             found = True
+
             break
 
-    # INSERT NEW ROW
     if not found:
 
         budget_sheet.append_row([
-            str(name),
+            name,
             int(monthly_budget),
         ])
 
-    # CLEAR CACHE
     st.cache_data.clear()
-    
-    
+
+
 # =========================
 # ACCOUNTS
 # =========================
 
+
 @st.cache_data(ttl=30)
 def get_accounts():
 
-    data = account_sheet.get_all_records()
+    data = (
+        account_sheet
+        .get_all_records()
+    )
 
     expected_columns = [
         "id",
@@ -391,12 +367,15 @@ def get_accounts():
     ]
 
     if not data:
+
         return pd.DataFrame(
             columns=expected_columns
         )
 
     df = pd.DataFrame(data)
 
-    df.columns = df.columns.str.strip()
+    df.columns = (
+        df.columns.str.strip()
+    )
 
     return df
