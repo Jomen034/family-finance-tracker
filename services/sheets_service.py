@@ -50,6 +50,7 @@ budget_sheet = spreadsheet.worksheet("budgeting")
 # =========================
 
 
+@st.cache_data(ttl=30)
 def get_transactions():
 
     data = transactions_sheet.get_all_records()
@@ -185,7 +186,7 @@ def update_transaction(
 # MASTER TRANSACTION NAMES
 # =========================
 
-
+@st.cache_data(ttl=30)
 def get_transaction_names():
 
     data = transaction_names_sheet.get_all_records()
@@ -220,7 +221,7 @@ def get_transaction_names():
 # BUDGET
 # =========================
 
-
+@st.cache_data(ttl=30)
 def get_budget_data():
 
     data = budget_sheet.get_all_records()
