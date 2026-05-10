@@ -71,6 +71,7 @@ def get_transactions():
         "date",
         "name",
         "category",
+        "account",
         "amount",
         "description",
         "created_at",
@@ -143,6 +144,7 @@ def add_transaction(data):
         "date",
         "name",
         "category",
+        "account",
         "amount",
         "description",
         "created_at",
@@ -164,6 +166,7 @@ def add_transaction(data):
         data["date"],
         data["name"],
         data["category"],
+        data["account"],
         int(data["amount"]),
         data["description"],
         data["created_at"],
@@ -186,8 +189,10 @@ def update_transaction(
         "date",
         "name",
         "category",
+        "account",
         "amount",
         "description",
+        "created_at",
     ]
 
     missing_keys = [
@@ -214,11 +219,12 @@ def update_transaction(
         if record["id"] == transaction_id:
 
             transactions_sheet.update(
-                f"B{idx}:F{idx}",
+                f"B{idx}:G{idx}",
                 [[
                     updated_data["date"],
                     updated_data["name"],
                     updated_data["category"],
+                    updated_data["account"],
                     int(updated_data["amount"]),
                     updated_data["description"],
                 ]]
@@ -368,3 +374,29 @@ def update_budget_data(
 
     # CLEAR CACHE
     st.cache_data.clear()
+    
+    
+# =========================
+# ACCOUNTS
+# =========================
+
+@st.cache_data(ttl=30)
+def get_accounts():
+
+    data = account_sheet.get_all_records()
+
+    expected_columns = [
+        "id",
+        "account_name",
+    ]
+
+    if not data:
+        return pd.DataFrame(
+            columns=expected_columns
+        )
+
+    df = pd.DataFrame(data)
+
+    df.columns = df.columns.str.strip()
+
+    return df
