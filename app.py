@@ -14,6 +14,7 @@ from services.sheets_service import (
     get_transaction_names,
     get_budget_data,
     update_budget_data,
+    get_accounts,
 )
 
 from services.analytics_service import (
@@ -24,6 +25,7 @@ from services.analytics_service import (
     expense_trend,
     expense_by_name,
     monthly_kpi,
+    account_summary,
 )
 
 # =========================
@@ -80,6 +82,8 @@ transaction_names_df = (
 )
 
 budget_df = get_budget_data()
+
+accounts_df = get_accounts()
 
 # =========================
 # SIDEBAR
@@ -214,6 +218,57 @@ if page == "Dashboard":
         )
 
     # =========================
+    # ACCOUNT USAGE
+    # =========================
+
+    st.subheader(
+        "🏦 Account Usage"
+    )
+
+    account_df = account_summary(
+        transactions_df
+    )
+
+    if not account_df.empty:
+
+        fig_account = px.bar(
+            account_df,
+            x="account",
+            y="total_amount",
+            title="Usage by Account",
+            hover_data=[
+                "total_transactions"
+            ],
+        )
+
+        st.plotly_chart(
+            fig_account,
+            use_container_width=True,
+        )
+
+        display_account_df = (
+            account_df.copy()
+        )
+
+        display_account_df[
+            "total_amount"
+        ] = (
+            display_account_df[
+                "total_amount"
+            ]
+            .apply(
+                lambda x:
+                f"Rp {x:,.0f}"
+            )
+        )
+
+        st.dataframe(
+            display_account_df,
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    # =========================
     # BUDGET VS ACTUAL
     # =========================
 
@@ -281,6 +336,7 @@ if page == "Dashboard":
                 "date",
                 "name",
                 "category",
+                "account",
                 "amount",
                 "description",
             ]
@@ -327,6 +383,13 @@ elif page == "Add Transaction":
             ],
         )
 
+        account = st.selectbox(
+            "Account",
+            accounts_df[
+                "account_name"
+            ].tolist(),
+        )
+
         amount = st.number_input(
             "Amount",
             min_value=0,
@@ -351,6 +414,7 @@ elif page == "Add Transaction":
                     "date": str(date),
                     "name": transaction_name,
                     "category": category,
+                    "account": account,
                     "amount": amount,
                     "description": description,
                     "created_at": (
@@ -473,6 +537,31 @@ elif page == "Edit Transaction":
             index=category_index,
         )
 
+        account_options = (
+            accounts_df[
+                "account_name"
+            ].tolist()
+        )
+
+        current_account = (
+            selected_row["account"]
+        )
+
+        account_index = (
+            account_options.index(
+                current_account
+            )
+            if current_account
+            in account_options
+            else 0
+        )
+
+        edit_account = st.selectbox(
+            "Account",
+            account_options,
+            index=account_index,
+        )
+
         edit_amount = st.number_input(
             "Amount",
             value=float(
@@ -507,6 +596,9 @@ elif page == "Edit Transaction":
                     "name": edit_name,
                     "category": (
                         edit_category
+                    ),
+                    "account": (
+                        edit_account
                     ),
                     "amount": (
                         edit_amount
