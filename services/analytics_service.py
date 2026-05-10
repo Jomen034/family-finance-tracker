@@ -4,6 +4,10 @@ import pandas as pd
 import streamlit as st
 
 
+# =========================
+# DAILY SUMMARY
+# =========================
+
 @st.cache_data(ttl=30)
 def daily_summary(df):
 
@@ -20,8 +24,17 @@ def daily_summary(df):
         .reset_index()
     )
 
+    result.columns = [
+        "date",
+        "total_amount",
+    ]
+
     return result
 
+
+# =========================
+# WEEKLY SUMMARY
+# =========================
 
 @st.cache_data(ttl=30)
 def weekly_summary(df):
@@ -45,8 +58,17 @@ def weekly_summary(df):
         .reset_index()
     )
 
+    result.columns = [
+        "week",
+        "total_amount",
+    ]
+
     return result
 
+
+# =========================
+# MONTHLY SUMMARY
+# =========================
 
 @st.cache_data(ttl=30)
 def monthly_summary(df):
@@ -70,8 +92,17 @@ def monthly_summary(df):
         .reset_index()
     )
 
+    result.columns = [
+        "month",
+        "total_amount",
+    ]
+
     return result
 
+
+# =========================
+# BUDGET VS ACTUAL
+# =========================
 
 @st.cache_data(ttl=30)
 def budget_vs_actual(
@@ -95,6 +126,7 @@ def budget_vs_actual(
         budget_df.columns.str.strip()
     )
 
+    # EXPENSE ONLY
     expense_df = expense_df[
         expense_df["category"]
         == "expense"
@@ -118,7 +150,8 @@ def budget_vs_actual(
         pd.to_numeric(
             merged["monthly_budget"],
             errors="coerce",
-        ).fillna(0)
+        )
+        .fillna(0)
     )
 
     merged["usage_percentage"] = (
@@ -137,4 +170,135 @@ def budget_vs_actual(
         .round(2)
     )
 
-    return merged
+    return merged.sort_values(
+        "amount",
+        ascending=False,
+    )
+
+
+# =========================
+# EXPENSE TREND
+# =========================
+
+@st.cache_data(ttl=30)
+def expense_trend(df):
+
+    if df.empty:
+        return pd.DataFrame()
+
+    expense_df = df[
+        df["category"]
+        == "expense"
+    ].copy()
+
+    result = (
+        expense_df.groupby("date")[
+            "amount"
+        ]
+        .sum()
+        .reset_index()
+    )
+
+    result.columns = [
+        "date",
+        "expense_amount",
+    ]
+
+    return result.sort_values(
+        "date"
+    )
+
+
+# =========================
+# EXPENSE BY NAME
+# =========================
+
+@st.cache_data(ttl=30)
+def expense_by_name(df):
+
+    if df.empty:
+        return pd.DataFrame()
+
+    expense_df = df[
+        df["category"]
+        == "expense"
+    ].copy()
+
+    result = (
+        expense_df.groupby("name")[
+            "amount"
+        ]
+        .sum()
+        .reset_index()
+    )
+
+    result.columns = [
+        "name",
+        "expense_amount",
+    ]
+
+    return result.sort_values(
+        "expense_amount",
+        ascending=False,
+    )
+
+
+# =========================
+# MONTHLY KPI
+# =========================
+
+@st.cache_data(ttl=30)
+def monthly_kpi(df):
+
+    if df.empty:
+        return {
+            "income": 0,
+            "expense": 0,
+            "saving": 0,
+            "total_transactions": 0,
+        }
+
+    temp_df = df.copy()
+
+    current_month = (
+        pd.Timestamp.now().month
+    )
+
+    current_year = (
+        pd.Timestamp.now().year
+    )
+
+    current_df = temp_df[
+        (
+            temp_df["date"].dt.month
+            == current_month
+        )
+        &
+        (
+            temp_df["date"].dt.year
+            == current_year
+        )
+    ]
+
+    income = current_df[
+        current_df["category"]
+        == "income"
+    ]["amount"].sum()
+
+    expense = current_df[
+        current_df["category"]
+        == "expense"
+    ]["amount"].sum()
+
+    saving = income - expense
+
+    total_transactions = len(
+        current_df
+    )
+
+    return {
+        "income": income,
+        "expense": expense,
+        "saving": saving,
+        "total_transactions": total_transactions,
+    }
