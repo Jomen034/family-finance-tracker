@@ -80,7 +80,10 @@ def get_transactions():
     df = pd.DataFrame(data)
 
     # CLEAN COLUMN NAMES
-    df.columns = df.columns.str.strip()
+    df.columns = (
+        df.columns
+        .str.strip()
+    )
 
     missing_cols = [
         col
@@ -162,7 +165,9 @@ def add_transaction(data):
         data["created_at"],
     ]
 
-    transactions_sheet.append_row(row)
+    transactions_sheet.append_row(
+        row
+    )
 
     # CLEAR CACHE
     st.cache_data.clear()
@@ -192,7 +197,10 @@ def update_transaction(
             f"Missing keys in update_transaction(): {missing_keys}"
         )
 
-    records = transactions_sheet.get_all_records()
+    records = (
+        transactions_sheet
+        .get_all_records()
+    )
 
     for idx, record in enumerate(
         records,
@@ -226,7 +234,10 @@ def update_transaction(
 @st.cache_data(ttl=30)
 def get_transaction_names():
 
-    data = transaction_names_sheet.get_all_records()
+    data = (
+        transaction_names_sheet
+        .get_all_records()
+    )
 
     expected_columns = [
         "id",
@@ -241,7 +252,10 @@ def get_transaction_names():
 
     df = pd.DataFrame(data)
 
-    df.columns = df.columns.str.strip()
+    df.columns = (
+        df.columns
+        .str.strip()
+    )
 
     missing_cols = [
         col
@@ -279,7 +293,10 @@ def get_budget_data():
 
     df = pd.DataFrame(data)
 
-    df.columns = df.columns.str.strip()
+    df.columns = (
+        df.columns
+        .str.strip()
+    )
 
     missing_cols = [
         col
@@ -292,10 +309,13 @@ def get_budget_data():
             f"Missing columns in budgeting sheet: {missing_cols}"
         )
 
-    df["monthly_budget"] = pd.to_numeric(
-        df["monthly_budget"],
-        errors="coerce",
-    ).fillna(0)
+    df["monthly_budget"] = (
+        pd.to_numeric(
+            df["monthly_budget"],
+            errors="coerce",
+        )
+        .fillna(0)
+    )
 
     return df
 
@@ -305,7 +325,10 @@ def update_budget_data(
     monthly_budget,
 ):
 
-    records = budget_sheet.get_all_records()
+    records = (
+        budget_sheet
+        .get_all_records()
+    )
 
     found = False
 
@@ -314,7 +337,13 @@ def update_budget_data(
         start=2,
     ):
 
-        if record["name"] == name:
+        # CLEAN KEY
+        record_name = (
+            str(record["name"])
+            .strip()
+        )
+
+        if record_name == str(name).strip():
 
             budget_sheet.update(
                 f"B{idx}",
@@ -324,10 +353,11 @@ def update_budget_data(
             found = True
             break
 
+    # INSERT NEW ROW
     if not found:
 
         budget_sheet.append_row([
-            name,
+            str(name),
             int(monthly_budget),
         ])
 
