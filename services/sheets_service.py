@@ -378,4 +378,16 @@ def get_accounts():
         df.columns.str.strip()
     )
 
+    missing_cols = [
+        col
+        for col in expected_columns
+        if col not in df.columns
+    ]
+
+    if missing_cols:
+
+        raise Exception(
+            f"Missing columns in account sheet: {missing_cols}"
+        )
+
     return df
