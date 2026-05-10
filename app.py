@@ -33,41 +33,47 @@ from services.analytics_service import (
 # =========================
 
 st.set_page_config(
-    page_title="Family Finance Tracker",
+    page_title="GFams Finance Tracker",
     page_icon="💰",
     layout="wide",
 )
 
 # =========================
-# AUTH
+# WELCOME SCREEN
 # =========================
 
-APP_PASSWORD = st.secrets["app"]["password"]
+if "entered_app" not in st.session_state:
+    st.session_state.entered_app = False
 
-if "authenticated" not in st.session_state:
-    st.session_state.authenticated = False
+if not st.session_state.entered_app:
 
-if not st.session_state.authenticated:
+    st.markdown(
+        """
+        # 💰 GFams Finance Tracker
 
-    st.title("🔐 Family Finance Tracker")
+        Welcome to your family financial dashboard.
 
-    password = st.text_input(
-        "Enter Password",
-        type="password",
+        Track:
+        - expenses
+        - income
+        - budgeting
+        - account usage
+        - spending analytics
+
+        Built for simple daily family finance management ❤️
+        """
     )
 
+    st.divider()
+
     if st.button(
-        "Login",
+        "🚀 Continue to App",
         use_container_width=True,
+        type="primary",
     ):
 
-        if password == APP_PASSWORD:
-
-            st.session_state.authenticated = True
-            st.rerun()
-
-        else:
-            st.error("Invalid password")
+        st.session_state.entered_app = True
+        st.rerun()
 
     st.stop()
 
@@ -90,7 +96,7 @@ accounts_df = get_accounts()
 # =========================
 
 st.sidebar.title(
-    "💰 Finance Tracker"
+    "💰 GFams Finance Tracker"
 )
 
 page = st.sidebar.radio(
