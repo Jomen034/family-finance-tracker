@@ -1,6 +1,5 @@
 # services/sheets_service.py
 
-import json
 import uuid
 
 import gspread
@@ -33,17 +32,25 @@ client = gspread.authorize(creds)
 # SPREADSHEET
 # =========================
 
-SPREADSHEET_NAME = st.secrets["sheets"]["spreadsheet_name"]
+SPREADSHEET_NAME = st.secrets[
+    "sheets"
+]["spreadsheet_name"]
 
-spreadsheet = client.open(SPREADSHEET_NAME)
+spreadsheet = client.open(
+    SPREADSHEET_NAME
+)
 
-transactions_sheet = spreadsheet.worksheet("transactions")
+transactions_sheet = spreadsheet.worksheet(
+    "transactions"
+)
 
 transaction_names_sheet = spreadsheet.worksheet(
     "master_transaction_names"
 )
 
-budget_sheet = spreadsheet.worksheet("budgeting")
+budget_sheet = spreadsheet.worksheet(
+    "budgeting"
+)
 
 # =========================
 # TRANSACTIONS
@@ -66,7 +73,9 @@ def get_transactions():
     ]
 
     if not data:
-        return pd.DataFrame(columns=expected_columns)
+        return pd.DataFrame(
+            columns=expected_columns
+        )
 
     df = pd.DataFrame(data)
 
@@ -74,7 +83,8 @@ def get_transactions():
     df.columns = df.columns.str.strip()
 
     missing_cols = [
-        col for col in expected_columns
+        col
+        for col in expected_columns
         if col not in df.columns
     ]
 
@@ -87,9 +97,21 @@ def get_transactions():
     df["amount"] = (
         df["amount"]
         .astype(str)
-        .str.replace("Rp", "", regex=False)
-        .str.replace(".", "", regex=False)
-        .str.replace(",", "", regex=False)
+        .str.replace(
+            "Rp",
+            "",
+            regex=False,
+        )
+        .str.replace(
+            ".",
+            "",
+            regex=False,
+        )
+        .str.replace(
+            ",",
+            "",
+            regex=False,
+        )
         .str.strip()
     )
 
@@ -98,6 +120,12 @@ def get_transactions():
         df["amount"],
         errors="coerce",
     ).fillna(0)
+
+    # DATE PARSING
+    df["date"] = pd.to_datetime(
+        df["date"],
+        errors="coerce",
+    )
 
     return df
 
@@ -114,7 +142,8 @@ def add_transaction(data):
     ]
 
     missing_keys = [
-        key for key in required_keys
+        key
+        for key in required_keys
         if key not in data
     ]
 
@@ -135,6 +164,9 @@ def add_transaction(data):
 
     transactions_sheet.append_row(row)
 
+    # CLEAR CACHE
+    st.cache_data.clear()
+
 
 def update_transaction(
     transaction_id,
@@ -150,7 +182,8 @@ def update_transaction(
     ]
 
     missing_keys = [
-        key for key in required_keys
+        key
+        for key in required_keys
         if key not in updated_data
     ]
 
@@ -181,10 +214,14 @@ def update_transaction(
 
             break
 
+    # CLEAR CACHE
+    st.cache_data.clear()
+
 
 # =========================
 # MASTER TRANSACTION NAMES
 # =========================
+
 
 @st.cache_data(ttl=30)
 def get_transaction_names():
@@ -198,14 +235,17 @@ def get_transaction_names():
     ]
 
     if not data:
-        return pd.DataFrame(columns=expected_columns)
+        return pd.DataFrame(
+            columns=expected_columns
+        )
 
     df = pd.DataFrame(data)
 
     df.columns = df.columns.str.strip()
 
     missing_cols = [
-        col for col in expected_columns
+        col
+        for col in expected_columns
         if col not in df.columns
     ]
 
@@ -221,6 +261,7 @@ def get_transaction_names():
 # BUDGET
 # =========================
 
+
 @st.cache_data(ttl=30)
 def get_budget_data():
 
@@ -232,14 +273,17 @@ def get_budget_data():
     ]
 
     if not data:
-        return pd.DataFrame(columns=expected_columns)
+        return pd.DataFrame(
+            columns=expected_columns
+        )
 
     df = pd.DataFrame(data)
 
     df.columns = df.columns.str.strip()
 
     missing_cols = [
-        col for col in expected_columns
+        col
+        for col in expected_columns
         if col not in df.columns
     ]
 
@@ -286,3 +330,6 @@ def update_budget_data(
             name,
             int(monthly_budget),
         ])
+
+    # CLEAR CACHE
+    st.cache_data.clear()
