@@ -318,7 +318,7 @@ def update_budget_data(
 
             budget_sheet.update(
                 f"B{idx}",
-                int(monthly_budget),
+                [[int(monthly_budget)]],
             )
 
             found = True
