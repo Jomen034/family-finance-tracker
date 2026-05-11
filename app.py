@@ -33,6 +33,16 @@ st.set_page_config(
 )
 
 # =========================
+# SESSION
+# =========================
+
+if "entered_app" not in st.session_state:
+    st.session_state.entered_app = False
+
+if "page" not in st.session_state:
+    st.session_state.page = "dashboard"
+
+# =========================
 # CUSTOM UI
 # =========================
 
@@ -58,20 +68,35 @@ st.markdown(
     }
 
     div[data-testid="stHorizontalBlock"] {
-        gap: 0.3rem;
+        gap: 0.4rem;
     }
 
-    div.stButton > button {
-        width: 100%;
-        height: 60px;
-        font-size: 26px;
+    .stButton > button {
         border-radius: 18px;
-        border: none;
-        background-color: #1F2937;
     }
 
-    div.stButton > button:hover {
-        background-color: #374151;
+    /* MOBILE NAVIGATION */
+
+    .bottom-nav-container {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+
+        background-color: #0B1120;
+
+        padding-top: 10px;
+        padding-bottom: 16px;
+        padding-left: 10px;
+        padding-right: 10px;
+
+        border-top: 1px solid #1F2937;
+
+        z-index: 999999;
+    }
+
+    .bottom-space {
+        height: 90px;
     }
 
     </style>
@@ -80,16 +105,70 @@ st.markdown(
 )
 
 # =========================
-# WELCOME
+# WELCOME SCREEN
 # =========================
 
-st.title("💰 GFams Finance Tracker")
+if not st.session_state.entered_app:
 
-st.caption(
-    "Simple family finance tracker for daily household expenses."
-)
+    st.markdown(
+        """
+        <div style="
+            text-align:center;
+            padding-top:90px;
+            padding-bottom:40px;
+        ">
 
-st.divider()
+            <h1 style="
+                font-size:72px;
+                margin-bottom:10px;
+            ">
+                💰
+            </h1>
+
+            <h1 style="
+                font-size:54px;
+                margin-bottom:0;
+                line-height:1.1;
+            ">
+                GFams
+            </h1>
+
+            <h1 style="
+                font-size:54px;
+                margin-top:0;
+                line-height:1.1;
+            ">
+                Finance Tracker
+            </h1>
+
+            <p style="
+                color:gray;
+                font-size:18px;
+                margin-top:30px;
+            ">
+                Simple family finance tracker
+                for daily household expenses.
+            </p>
+
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("<br><br>", unsafe_allow_html=True)
+
+    col1, col2, col3 = st.columns([1,2,1])
+
+    with col2:
+
+        if st.button(
+            "Continue to App",
+            use_container_width=True,
+        ):
+            st.session_state.entered_app = True
+            st.rerun()
+
+    st.stop()
 
 # =========================
 # LOAD DATA
@@ -123,74 +202,62 @@ if not transactions_df.empty:
 # MOBILE NAVIGATION
 # =========================
 
-query_params = st.query_params
-
-if "page" not in query_params:
-    st.query_params["page"] = "dashboard"
-
-selected_tab = st.query_params["page"]
+selected_tab = st.session_state.page
 
 st.markdown(
-    f"""
-    <style>
+    '<div class="bottom-nav-container">',
+    unsafe_allow_html=True,
+)
 
-    .bottom-nav {{
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 75px;
-        background-color: #111827;
-        border-top: 1px solid #374151;
+nav1, nav2, nav3, nav4, nav5 = st.columns(5)
 
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
+with nav1:
 
-        z-index: 999999;
-    }}
+    if st.button(
+        "🏠",
+        use_container_width=True,
+    ):
+        st.session_state.page = "dashboard"
+        st.rerun()
 
-    .bottom-nav a {{
-        text-decoration: none;
-        font-size: 28px;
-        color: #9CA3AF;
-    }}
+with nav2:
 
-    .bottom-nav a.active {{
-        color: #F87171;
-    }}
+    if st.button(
+        "➕",
+        use_container_width=True,
+    ):
+        st.session_state.page = "add"
+        st.rerun()
 
-    </style>
+with nav3:
 
-    <div class="bottom-nav">
+    if st.button(
+        "✏️",
+        use_container_width=True,
+    ):
+        st.session_state.page = "edit"
+        st.rerun()
 
-        <a href="?page=dashboard"
-           class="{"active" if selected_tab == "dashboard" else ""}">
-           🏠
-        </a>
+with nav4:
 
-        <a href="?page=add"
-           class="{"active" if selected_tab == "add" else ""}">
-           ➕
-        </a>
+    if st.button(
+        "💰",
+        use_container_width=True,
+    ):
+        st.session_state.page = "budget"
+        st.rerun()
 
-        <a href="?page=edit"
-           class="{"active" if selected_tab == "edit" else ""}">
-           ✏️
-        </a>
+with nav5:
 
-        <a href="?page=budget"
-           class="{"active" if selected_tab == "budget" else ""}">
-           💰
-        </a>
+    if st.button(
+        "📊",
+        use_container_width=True,
+    ):
+        st.session_state.page = "analytics"
+        st.rerun()
 
-        <a href="?page=analytics"
-           class="{"active" if selected_tab == "analytics" else ""}">
-           📊
-        </a>
-
-    </div>
-    """,
+st.markdown(
+    "</div>",
     unsafe_allow_html=True,
 )
 
@@ -203,6 +270,7 @@ if selected_tab == "dashboard":
     st.title("📊 Dashboard")
 
     if transactions_df.empty:
+
         st.warning("No transaction data yet.")
         st.stop()
 
@@ -233,12 +301,14 @@ if selected_tab == "dashboard":
     col1, col2 = st.columns(2)
 
     with col1:
+
         st.metric(
             "💵 Income",
             f"Rp {income:,.0f}",
         )
 
     with col2:
+
         st.metric(
             "💸 Expense",
             f"Rp {expense:,.0f}",
@@ -247,12 +317,14 @@ if selected_tab == "dashboard":
     col3, col4 = st.columns(2)
 
     with col3:
+
         st.metric(
             "🏦 Saving",
             f"Rp {saving:,.0f}",
         )
 
     with col4:
+
         st.metric(
             "🧾 Transactions",
             transaction_count,
@@ -398,6 +470,7 @@ elif selected_tab == "edit":
     st.title("✏️ Edit Transaction")
 
     if transactions_df.empty:
+
         st.warning("No transaction data.")
         st.stop()
 
@@ -659,3 +732,12 @@ elif selected_tab == "analytics":
         use_container_width=True,
         hide_index=True,
     )
+
+# =========================
+# BOTTOM SPACE
+# =========================
+
+st.markdown(
+    '<div class="bottom-space"></div>',
+    unsafe_allow_html=True,
+)
