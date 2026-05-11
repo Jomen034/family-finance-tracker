@@ -1,9 +1,12 @@
 # app.py
 
-import streamlit as st
-import pandas as pd
-
+import time
 from datetime import datetime
+
+import pandas as pd
+import plotly.express as px
+import streamlit as st
+from streamlit_option_menu import option_menu
 
 from services.sheets_service import (
     get_transactions,
@@ -16,10 +19,13 @@ from services.sheets_service import (
 )
 
 from services.analytics_service import (
-    daily_summary,
-    weekly_summary,
     monthly_summary,
+    weekly_summary,
+    daily_summary,
     budget_vs_actual,
+    expense_trend,
+    expense_by_name,
+    monthly_kpi,
     account_summary,
 )
 
@@ -34,41 +40,7 @@ st.set_page_config(
 )
 
 # =========================
-# HIDE STREAMLIT DEFAULT UI
-# =========================
-
-st.markdown(
-    """
-    <style>
-
-    #MainMenu {
-        visibility: hidden;
-    }
-
-    footer {
-        visibility: hidden;
-    }
-
-    header {
-        visibility: hidden;
-    }
-
-    section[data-testid="stSidebar"] {
-        display: none;
-    }
-
-    .block-container {
-        padding-top: 1.5rem;
-        padding-bottom: 120px;
-    }
-
-    </style>
-    """,
-    unsafe_allow_html=True,
-)
-
-# =========================
-# WELCOME PAGE
+# WELCOME SCREEN
 # =========================
 
 if "entered_app" not in st.session_state:
@@ -78,45 +50,29 @@ if not st.session_state.entered_app:
 
     st.markdown(
         """
-        <div style="
-            padding-top:80px;
-            padding-bottom:40px;
-        ">
+        # 💰 GFams Finance Tracker
 
-        <h1 style="
-            font-size:54px;
-            margin-bottom:0;
-            line-height:1.1;
-        ">
-            💰 GFams
-        </h1>
+        Welcome to your family financial dashboard.
 
-        <h1 style="
-            font-size:54px;
-            margin-top:0;
-            line-height:1.1;
-        ">
-            Finance Tracker
-        </h1>
+        Track:
+        - expenses
+        - income
+        - budgeting
+        - account usage
+        - spending analytics
 
-        <p style="
-            color:gray;
-            font-size:18px;
-            margin-top:30px;
-        ">
-            Simple family finance tracker
-            for daily household expenses.
-        </p>
-
-        </div>
-        """,
-        unsafe_allow_html=True,
+        Built for simple daily family finance management ❤️
+        """
     )
 
+    st.divider()
+
     if st.button(
-        "Continue to App",
+        "🚀 Continue to App",
         use_container_width=True,
+        type="primary",
     ):
+
         st.session_state.entered_app = True
         st.rerun()
 
@@ -127,105 +83,37 @@ if not st.session_state.entered_app:
 # =========================
 
 transactions_df = get_transactions()
-transaction_names_df = get_transaction_names()
-budget_df = get_budget_data()
-accounts_df = get_accounts()
 
-# =========================
-# QUERY PARAMS NAVIGATION
-# =========================
-
-query_params = st.query_params
-
-if "page" not in query_params:
-    st.query_params["page"] = "dashboard"
-
-current_page = st.query_params["page"]
-
-page_map = {
-    "dashboard": "Dashboard",
-    "add": "Add Transaction",
-    "edit": "Edit Transaction",
-    "budget": "Budgeting",
-    "analytics": "Analytics",
-}
-
-page = page_map.get(
-    current_page,
-    "Dashboard",
+transaction_names_df = (
+    get_transaction_names()
 )
+
+budget_df = get_budget_data()
+
+accounts_df = get_accounts()
 
 # =========================
 # BOTTOM NAVIGATION
 # =========================
 
-st.markdown(
-    f"""
-    <style>
-
-    .bottom-nav {{
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        background-color: #0E1117;
-        border-top: 1px solid #262730;
-        padding-top: 12px;
-        padding-bottom: 20px;
-        z-index: 999999;
-    }}
-
-    .bottom-nav-container {{
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-    }}
-
-    .nav-item {{
-        text-decoration: none;
-        font-size: 28px;
-        opacity: 0.45;
-    }}
-
-    .nav-item.active {{
-        opacity: 1;
-        transform: scale(1.15);
-    }}
-
-    </style>
-
-    <div class="bottom-nav">
-        <div class="bottom-nav-container">
-
-            <a href="?page=dashboard"
-               class="nav-item {'active' if current_page == 'dashboard' else ''}">
-               🏠
-            </a>
-
-            <a href="?page=add"
-               class="nav-item {'active' if current_page == 'add' else ''}">
-               ➕
-            </a>
-
-            <a href="?page=edit"
-               class="nav-item {'active' if current_page == 'edit' else ''}">
-               ✏️
-            </a>
-
-            <a href="?page=budget"
-               class="nav-item {'active' if current_page == 'budget' else ''}">
-               💰
-            </a>
-
-            <a href="?page=analytics"
-               class="nav-item {'active' if current_page == 'analytics' else ''}">
-               📊
-            </a>
-
-        </div>
-    </div>
-    """,
-    unsafe_allow_html=True,
+page = option_menu(
+    menu_title=None,
+    options=[
+        "Dashboard",
+        "Add",
+        "Edit",
+        "Budget",
+        "Analytics",
+    ],
+    icons=[
+        "house",
+        "plus-circle",
+        "pencil-square",
+        "wallet2",
+        "bar-chart",
+    ],
+    orientation="horizontal",
+    default_index=0,
 )
 
 # =========================
@@ -244,32 +132,13 @@ if page == "Dashboard":
 
         st.stop()
 
-    current_month = datetime.now().month
-    current_year = datetime.now().year
+    # =========================
+    # KPI
+    # =========================
 
-    current_df = transactions_df[
-        (
-            transactions_df["date"].dt.month
-            == current_month
-        )
-        &
-        (
-            transactions_df["date"].dt.year
-            == current_year
-        )
-    ]
-
-    income = current_df[
-        current_df["category"] == "income"
-    ]["amount"].sum()
-
-    expense = current_df[
-        current_df["category"] == "expense"
-    ]["amount"].sum()
-
-    saving = income - expense
-
-    total_transactions = len(current_df)
+    kpi = monthly_kpi(
+        transactions_df
+    )
 
     col1, col2 = st.columns(2)
 
@@ -277,85 +146,226 @@ if page == "Dashboard":
 
         st.metric(
             "💵 Income",
-            f"Rp {income:,.0f}",
-        )
-
-        st.metric(
-            "💸 Expense",
-            f"Rp {expense:,.0f}",
+            f"Rp {kpi['income']:,.0f}",
         )
 
     with col2:
 
         st.metric(
-            "🏦 Saving",
-            f"Rp {saving:,.0f}",
+            "💸 Expense",
+            f"Rp {kpi['expense']:,.0f}",
         )
+
+    col3, col4 = st.columns(2)
+
+    with col3:
+
+        st.metric(
+            "🏦 Saving",
+            f"Rp {kpi['saving']:,.0f}",
+        )
+
+    with col4:
 
         st.metric(
             "🧾 Transactions",
-            total_transactions,
+            kpi["total_transactions"],
         )
 
     st.divider()
 
-    st.subheader("📈 Expense Trend")
+    # =========================
+    # EXPENSE TREND
+    # =========================
 
-    expense_daily = (
-        current_df[
-            current_df["category"] == "expense"
-        ]
-        .groupby("date")["amount"]
-        .sum()
+    st.subheader(
+        "📈 Expense Trend"
     )
 
-    st.line_chart(expense_daily)
+    trend_df = expense_trend(
+        transactions_df
+    )
+
+    if not trend_df.empty:
+
+        fig_trend = px.line(
+            trend_df,
+            x="date",
+            y="expense_amount",
+            markers=True,
+            title="Daily Expense Trend",
+        )
+
+        st.plotly_chart(
+            fig_trend,
+            use_container_width=True,
+        )
+
+    # =========================
+    # EXPENSE BY NAME
+    # =========================
+
+    st.subheader(
+        "💳 Expense by Name"
+    )
+
+    expense_name_df = (
+        expense_by_name(
+            transactions_df
+        )
+    )
+
+    if not expense_name_df.empty:
+
+        fig_expense_name = px.bar(
+            expense_name_df,
+            x="name",
+            y="expense_amount",
+            title="Expense by Transaction Name",
+        )
+
+        st.plotly_chart(
+            fig_expense_name,
+            use_container_width=True,
+        )
+
+    # =========================
+    # ACCOUNT USAGE
+    # =========================
+
+    st.subheader(
+        "🏦 Account Usage"
+    )
+
+    account_df = account_summary(
+        transactions_df
+    )
+
+    if not account_df.empty:
+
+        fig_account = px.bar(
+            account_df,
+            x="account",
+            y="total_amount",
+            title="Usage by Account",
+            hover_data=[
+                "total_transactions"
+            ],
+        )
+
+        st.plotly_chart(
+            fig_account,
+            use_container_width=True,
+        )
+
+        display_account_df = (
+            account_df.copy()
+        )
+
+        display_account_df[
+            "total_amount"
+        ] = (
+            display_account_df[
+                "total_amount"
+            ]
+            .apply(
+                lambda x:
+                f"Rp {x:,.0f}"
+            )
+        )
+
+        st.dataframe(
+            display_account_df,
+            use_container_width=True,
+            hide_index=True,
+        )
+
+    # =========================
+    # BUDGET VS ACTUAL
+    # =========================
+
+    st.subheader(
+        "🎯 Budget vs Actual"
+    )
+
+    budget_actual_df = (
+        budget_vs_actual(
+            transactions_df,
+            budget_df,
+        )
+    )
+
+    if not budget_actual_df.empty:
+
+        fig_budget = px.bar(
+            budget_actual_df,
+            x="name",
+            y=[
+                "amount",
+                "monthly_budget",
+            ],
+            barmode="group",
+            title="Budget vs Actual",
+        )
+
+        st.plotly_chart(
+            fig_budget,
+            use_container_width=True,
+        )
 
     st.divider()
 
-    st.subheader("🏦 Account Usage")
+    # =========================
+    # RECENT TRANSACTIONS
+    # =========================
 
-    account_usage = account_summary(
-        current_df
+    st.subheader(
+        "🕒 Recent Transactions"
+    )
+
+    recent_df = (
+        transactions_df
+        .sort_values(
+            "date",
+            ascending=False,
+        )
+        .head(10)
+    )
+
+    display_df = recent_df.copy()
+
+    display_df["amount"] = (
+        display_df["amount"]
+        .apply(
+            lambda x:
+            f"Rp {x:,.0f}"
+        )
     )
 
     st.dataframe(
-        account_usage,
+        display_df[
+            [
+                "date",
+                "name",
+                "category",
+                "account",
+                "amount",
+                "description",
+            ]
+        ],
         use_container_width=True,
-    )
-
-    st.divider()
-
-    st.subheader("🧾 Recent Transactions")
-
-    display_df = current_df.sort_values(
-        "date",
-        ascending=False,
-    )
-
-    st.dataframe(
-        display_df,
-        use_container_width=True,
+        hide_index=True,
     )
 
 # =========================
 # ADD TRANSACTION
 # =========================
 
-elif page == "Add Transaction":
+elif page == "Add":
 
-    st.title("➕ Add Transaction")
-
-    if "add_success" not in st.session_state:
-        st.session_state.add_success = False
-
-    if st.session_state.add_success:
-
-        st.success(
-            "Transaction added successfully!"
-        )
-
-        st.session_state.add_success = False
+    st.title(
+        "➕ Add Transaction"
+    )
 
     with st.form(
         "add_transaction_form",
@@ -366,11 +376,13 @@ elif page == "Add Transaction":
             "Date"
         )
 
-        transaction_name = st.selectbox(
-            "Transaction Name",
-            transaction_names_df[
-                "name"
-            ].tolist(),
+        transaction_name = (
+            st.selectbox(
+                "Transaction Name",
+                transaction_names_df[
+                    "name"
+                ].tolist(),
+            )
         )
 
         category = st.selectbox(
@@ -400,8 +412,11 @@ elif page == "Add Transaction":
             "Description"
         )
 
-        submitted = st.form_submit_button(
-            "Save Transaction"
+        submitted = (
+            st.form_submit_button(
+                "Save Transaction",
+                use_container_width=True,
+            )
         )
 
         if submitted:
@@ -412,13 +427,20 @@ elif page == "Add Transaction":
                     "name": transaction_name,
                     "category": category,
                     "account": account,
-                    "amount": int(amount),
+                    "amount": amount,
                     "description": description,
-                    "created_at": datetime.now().isoformat(),
+                    "created_at": (
+                        datetime.now()
+                        .isoformat()
+                    ),
                 }
             )
 
-            st.session_state.add_success = True
+            st.success(
+                "Transaction added successfully!"
+            )
+
+            time.sleep(1.5)
 
             st.rerun()
 
@@ -426,9 +448,11 @@ elif page == "Add Transaction":
 # EDIT TRANSACTION
 # =========================
 
-elif page == "Edit Transaction":
+elif page == "Edit":
 
-    st.title("✏️ Edit Transaction")
+    st.title(
+        "✏️ Edit Transaction"
+    )
 
     if transactions_df.empty:
 
@@ -440,12 +464,11 @@ elif page == "Edit Transaction":
 
     transactions_df["label"] = (
         transactions_df["date"]
-        .dt.strftime("%Y-%m-%d")
+        .astype(str)
         + " | "
         + transactions_df["name"]
         + " | Rp "
         + transactions_df["amount"]
-        .astype(int)
         .astype(str)
     )
 
@@ -456,10 +479,13 @@ elif page == "Edit Transaction":
         ].tolist(),
     )
 
-    selected_row = transactions_df[
-        transactions_df["label"]
-        == selected_label
-    ].iloc[0]
+    selected_row = (
+        transactions_df[
+            transactions_df["label"]
+            == selected_label
+        ]
+        .iloc[0]
+    )
 
     with st.form(
         "edit_transaction_form"
@@ -467,71 +493,107 @@ elif page == "Edit Transaction":
 
         edit_date = st.date_input(
             "Date",
-            value=selected_row["date"],
+            pd.to_datetime(
+                selected_row["date"]
+            ),
+        )
+
+        name_options = (
+            transaction_names_df[
+                "name"
+            ].tolist()
+        )
+
+        current_name = (
+            selected_row["name"]
+        )
+
+        current_index = (
+            name_options.index(
+                current_name
+            )
+            if current_name
+            in name_options
+            else 0
         )
 
         edit_name = st.selectbox(
             "Transaction Name",
-            transaction_names_df[
-                "name"
-            ].tolist(),
-            index=transaction_names_df[
-                transaction_names_df["name"]
-                == selected_row["name"]
-            ].index[0],
+            name_options,
+            index=current_index,
+        )
+
+        category_options = [
+            "expense",
+            "income",
+            "transfer/topup",
+            "cash withdrawal",
+        ]
+
+        current_category = (
+            selected_row["category"]
+        )
+
+        category_index = (
+            category_options.index(
+                current_category
+            )
+            if current_category
+            in category_options
+            else 0
         )
 
         edit_category = st.selectbox(
             "Category",
-            [
-                "expense",
-                "income",
-                "transfer/topup",
-                "cash withdrawal",
-            ],
+            category_options,
+            index=category_index,
         )
 
-        account_list = accounts_df[
-            "account_name"
-        ].tolist()
+        account_options = (
+            accounts_df[
+                "account_name"
+            ].tolist()
+        )
 
         current_account = (
             selected_row["account"]
-            if "account" in selected_row
-            else account_list[0]
+        )
+
+        account_index = (
+            account_options.index(
+                current_account
+            )
+            if current_account
+            in account_options
+            else 0
         )
 
         edit_account = st.selectbox(
             "Account",
-            account_list,
-            index=(
-                account_list.index(
-                    current_account
-                )
-                if current_account
-                in account_list
-                else 0
-            ),
+            account_options,
+            index=account_index,
         )
 
         edit_amount = st.number_input(
             "Amount",
-            value=int(
+            value=float(
                 selected_row["amount"]
             ),
-            step=1000,
         )
 
-        edit_description = st.text_area(
-            "Description",
-            value=selected_row[
-                "description"
-            ],
+        edit_description = (
+            st.text_area(
+                "Description",
+                value=selected_row[
+                    "description"
+                ],
+            )
         )
 
         update_submitted = (
             st.form_submit_button(
-                "Update Transaction"
+                "Update Transaction",
+                use_container_width=True,
             )
         )
 
@@ -540,12 +602,22 @@ elif page == "Edit Transaction":
             update_transaction(
                 selected_row["id"],
                 {
-                    "date": str(edit_date),
+                    "date": str(
+                        edit_date
+                    ),
                     "name": edit_name,
-                    "category": edit_category,
-                    "account": edit_account,
-                    "amount": int(edit_amount),
-                    "description": edit_description,
+                    "category": (
+                        edit_category
+                    ),
+                    "account": (
+                        edit_account
+                    ),
+                    "amount": (
+                        edit_amount
+                    ),
+                    "description": (
+                        edit_description
+                    ),
                 },
             )
 
@@ -553,13 +625,15 @@ elif page == "Edit Transaction":
                 "Transaction updated successfully!"
             )
 
+            time.sleep(1.5)
+
             st.rerun()
 
 # =========================
 # BUDGETING
 # =========================
 
-elif page == "Budgeting":
+elif page == "Budget":
 
     st.title("🎯 Budgeting")
 
@@ -567,9 +641,28 @@ elif page == "Budgeting":
         "Current Budget"
     )
 
+    display_budget_df = (
+        budget_df.copy()
+    )
+
+    if not display_budget_df.empty:
+
+        display_budget_df[
+            "monthly_budget"
+        ] = (
+            display_budget_df[
+                "monthly_budget"
+            ]
+            .apply(
+                lambda x:
+                f"Rp {x:,.0f}"
+            )
+        )
+
     st.dataframe(
-        budget_df,
+        display_budget_df,
         use_container_width=True,
+        hide_index=True,
     )
 
     st.divider()
@@ -579,22 +672,27 @@ elif page == "Budgeting":
         clear_on_submit=True,
     ):
 
-        selected_name = st.selectbox(
-            "Transaction Name",
-            transaction_names_df[
-                "name"
-            ].tolist(),
+        selected_name = (
+            st.selectbox(
+                "Transaction Name",
+                transaction_names_df[
+                    "name"
+                ].tolist(),
+            )
         )
 
-        monthly_budget = st.number_input(
-            "Monthly Budget",
-            min_value=0,
-            step=100000,
+        monthly_budget = (
+            st.number_input(
+                "Monthly Budget",
+                min_value=0,
+                step=100000,
+            )
         )
 
         budget_submit = (
             st.form_submit_button(
-                "Save Budget"
+                "Save Budget",
+                use_container_width=True,
             )
         )
 
@@ -606,8 +704,10 @@ elif page == "Budgeting":
             )
 
             st.success(
-                "Budget updated successfully!"
+                "Budget updated!"
             )
+
+            time.sleep(1.5)
 
             st.rerun()
 
@@ -644,6 +744,7 @@ elif page == "Analytics":
         st.dataframe(
             daily,
             use_container_width=True,
+            hide_index=True,
         )
 
     with tab2:
@@ -651,6 +752,7 @@ elif page == "Analytics":
         st.dataframe(
             weekly,
             use_container_width=True,
+            hide_index=True,
         )
 
     with tab3:
@@ -658,6 +760,7 @@ elif page == "Analytics":
         st.dataframe(
             monthly,
             use_container_width=True,
+            hide_index=True,
         )
 
     st.divider()
@@ -666,12 +769,57 @@ elif page == "Analytics":
         "🎯 Budget vs Actual"
     )
 
-    budget_actual = budget_vs_actual(
-        transactions_df,
-        budget_df,
+    budget_actual = (
+        budget_vs_actual(
+            transactions_df,
+            budget_df,
+        )
     )
 
-    st.dataframe(
-        budget_actual,
-        use_container_width=True,
-    )
+    if not budget_actual.empty:
+
+        display_budget_actual = (
+            budget_actual.copy()
+        )
+
+        display_budget_actual[
+            "amount"
+        ] = (
+            display_budget_actual[
+                "amount"
+            ]
+            .apply(
+                lambda x:
+                f"Rp {x:,.0f}"
+            )
+        )
+
+        display_budget_actual[
+            "monthly_budget"
+        ] = (
+            display_budget_actual[
+                "monthly_budget"
+            ]
+            .apply(
+                lambda x:
+                f"Rp {x:,.0f}"
+            )
+        )
+
+        display_budget_actual[
+            "usage_percentage"
+        ] = (
+            display_budget_actual[
+                "usage_percentage"
+            ]
+            .apply(
+                lambda x:
+                f"{x:.2f}%"
+            )
+        )
+
+        st.dataframe(
+            display_budget_actual,
+            use_container_width=True,
+            hide_index=True,
+        )
