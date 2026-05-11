@@ -123,34 +123,76 @@ if not transactions_df.empty:
 # MOBILE NAVIGATION
 # =========================
 
-if "page" not in st.session_state:
-    st.session_state.page = "dashboard"
+query_params = st.query_params
 
-nav1, nav2, nav3, nav4, nav5 = st.columns(5)
+if "page" not in query_params:
+    st.query_params["page"] = "dashboard"
 
-with nav1:
-    if st.button("🏠"):
-        st.session_state.page = "dashboard"
+selected_tab = st.query_params["page"]
 
-with nav2:
-    if st.button("➕"):
-        st.session_state.page = "add"
+st.markdown(
+    f"""
+    <style>
 
-with nav3:
-    if st.button("✏️"):
-        st.session_state.page = "edit"
+    .bottom-nav {{
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 75px;
+        background-color: #111827;
+        border-top: 1px solid #374151;
 
-with nav4:
-    if st.button("💰"):
-        st.session_state.page = "budget"
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
 
-with nav5:
-    if st.button("📊"):
-        st.session_state.page = "analytics"
+        z-index: 999999;
+    }}
 
-selected_tab = st.session_state.page
+    .bottom-nav a {{
+        text-decoration: none;
+        font-size: 28px;
+        color: #9CA3AF;
+    }}
 
-st.divider()
+    .bottom-nav a.active {{
+        color: #F87171;
+    }}
+
+    </style>
+
+    <div class="bottom-nav">
+
+        <a href="?page=dashboard"
+           class="{"active" if selected_tab == "dashboard" else ""}">
+           🏠
+        </a>
+
+        <a href="?page=add"
+           class="{"active" if selected_tab == "add" else ""}">
+           ➕
+        </a>
+
+        <a href="?page=edit"
+           class="{"active" if selected_tab == "edit" else ""}">
+           ✏️
+        </a>
+
+        <a href="?page=budget"
+           class="{"active" if selected_tab == "budget" else ""}">
+           💰
+        </a>
+
+        <a href="?page=analytics"
+           class="{"active" if selected_tab == "analytics" else ""}">
+           📊
+        </a>
+
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 # =========================
 # DASHBOARD
