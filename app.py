@@ -20,6 +20,7 @@ from services.analytics_service import (
     weekly_summary,
     monthly_summary,
     budget_vs_actual,
+    account_summary,
 )
 
 # =========================
@@ -33,17 +34,7 @@ st.set_page_config(
 )
 
 # =========================
-# SESSION
-# =========================
-
-if "entered_app" not in st.session_state:
-    st.session_state.entered_app = False
-
-if "page" not in st.session_state:
-    st.session_state.page = "dashboard"
-
-# =========================
-# CUSTOM UI
+# HIDE STREAMLIT DEFAULT UI
 # =========================
 
 st.markdown(
@@ -62,41 +53,13 @@ st.markdown(
         visibility: hidden;
     }
 
+    section[data-testid="stSidebar"] {
+        display: none;
+    }
+
     .block-container {
-        padding-top: 1rem;
-        padding-bottom: 100px;
-    }
-
-    div[data-testid="stHorizontalBlock"] {
-        gap: 0.4rem;
-    }
-
-    .stButton > button {
-        border-radius: 18px;
-    }
-
-    /* MOBILE NAVIGATION */
-
-    .bottom-nav-container {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-
-        background-color: #0B1120;
-
-        padding-top: 10px;
-        padding-bottom: 16px;
-        padding-left: 10px;
-        padding-right: 10px;
-
-        border-top: 1px solid #1F2937;
-
-        z-index: 999999;
-    }
-
-    .bottom-space {
-        height: 90px;
+        padding-top: 1.5rem;
+        padding-bottom: 120px;
     }
 
     </style>
@@ -105,68 +68,57 @@ st.markdown(
 )
 
 # =========================
-# WELCOME SCREEN
+# WELCOME PAGE
 # =========================
+
+if "entered_app" not in st.session_state:
+    st.session_state.entered_app = False
 
 if not st.session_state.entered_app:
 
     st.markdown(
         """
         <div style="
-            text-align:center;
-            padding-top:90px;
+            padding-top:80px;
             padding-bottom:40px;
         ">
 
-            <h1 style="
-                font-size:72px;
-                margin-bottom:10px;
-            ">
-                💰
-            </h1>
+        <h1 style="
+            font-size:54px;
+            margin-bottom:0;
+            line-height:1.1;
+        ">
+            💰 GFams
+        </h1>
 
-            <h1 style="
-                font-size:54px;
-                margin-bottom:0;
-                line-height:1.1;
-            ">
-                GFams
-            </h1>
+        <h1 style="
+            font-size:54px;
+            margin-top:0;
+            line-height:1.1;
+        ">
+            Finance Tracker
+        </h1>
 
-            <h1 style="
-                font-size:54px;
-                margin-top:0;
-                line-height:1.1;
-            ">
-                Finance Tracker
-            </h1>
-
-            <p style="
-                color:gray;
-                font-size:18px;
-                margin-top:30px;
-            ">
-                Simple family finance tracker
-                for daily household expenses.
-            </p>
+        <p style="
+            color:gray;
+            font-size:18px;
+            margin-top:30px;
+        ">
+            Simple family finance tracker
+            for daily household expenses.
+        </p>
 
         </div>
         """,
         unsafe_allow_html=True,
     )
 
-    st.markdown("<br><br>", unsafe_allow_html=True)
-
-    col1, col2, col3 = st.columns([1,2,1])
-
-    with col2:
-
-        if st.button(
-            "Continue to App",
-            use_container_width=True,
-        ):
-            st.session_state.entered_app = True
-            st.rerun()
+    if st.button(
+        "Continue to App",
+        use_container_width=True,
+    ):
+        st.session_state.entered_app = True
+        st.rerun()
 
     st.stop()
 
@@ -175,89 +127,104 @@ if not st.session_state.entered_app:
 # =========================
 
 transactions_df = get_transactions()
-
 transaction_names_df = get_transaction_names()
-
 budget_df = get_budget_data()
-
 accounts_df = get_accounts()
 
 # =========================
-# DATA CLEANING
+# QUERY PARAMS NAVIGATION
 # =========================
 
-if not transactions_df.empty:
+query_params = st.query_params
 
-    transactions_df["amount"] = pd.to_numeric(
-        transactions_df["amount"],
-        errors="coerce",
-    ).fillna(0)
+if "page" not in query_params:
+    st.query_params["page"] = "dashboard"
 
-    transactions_df["date"] = pd.to_datetime(
-        transactions_df["date"],
-        errors="coerce",
-    )
+current_page = st.query_params["page"]
 
-# =========================
-# MOBILE NAVIGATION
-# =========================
+page_map = {
+    "dashboard": "Dashboard",
+    "add": "Add Transaction",
+    "edit": "Edit Transaction",
+    "budget": "Budgeting",
+    "analytics": "Analytics",
+}
 
-selected_tab = st.session_state.page
-
-st.markdown(
-    '<div class="bottom-nav-container">',
-    unsafe_allow_html=True,
+page = page_map.get(
+    current_page,
+    "Dashboard",
 )
 
-nav1, nav2, nav3, nav4, nav5 = st.columns(5)
-
-with nav1:
-
-    if st.button(
-        "🏠",
-        use_container_width=True,
-    ):
-        st.session_state.page = "dashboard"
-        st.rerun()
-
-with nav2:
-
-    if st.button(
-        "➕",
-        use_container_width=True,
-    ):
-        st.session_state.page = "add"
-        st.rerun()
-
-with nav3:
-
-    if st.button(
-        "✏️",
-        use_container_width=True,
-    ):
-        st.session_state.page = "edit"
-        st.rerun()
-
-with nav4:
-
-    if st.button(
-        "💰",
-        use_container_width=True,
-    ):
-        st.session_state.page = "budget"
-        st.rerun()
-
-with nav5:
-
-    if st.button(
-        "📊",
-        use_container_width=True,
-    ):
-        st.session_state.page = "analytics"
-        st.rerun()
+# =========================
+# BOTTOM NAVIGATION
+# =========================
 
 st.markdown(
-    "</div>",
+    f"""
+    <style>
+
+    .bottom-nav {{
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        background-color: #0E1117;
+        border-top: 1px solid #262730;
+        padding-top: 12px;
+        padding-bottom: 20px;
+        z-index: 999999;
+    }}
+
+    .bottom-nav-container {{
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+    }}
+
+    .nav-item {{
+        text-decoration: none;
+        font-size: 28px;
+        opacity: 0.45;
+    }}
+
+    .nav-item.active {{
+        opacity: 1;
+        transform: scale(1.15);
+    }}
+
+    </style>
+
+    <div class="bottom-nav">
+        <div class="bottom-nav-container">
+
+            <a href="?page=dashboard"
+               class="nav-item {'active' if current_page == 'dashboard' else ''}">
+               🏠
+            </a>
+
+            <a href="?page=add"
+               class="nav-item {'active' if current_page == 'add' else ''}">
+               ➕
+            </a>
+
+            <a href="?page=edit"
+               class="nav-item {'active' if current_page == 'edit' else ''}">
+               ✏️
+            </a>
+
+            <a href="?page=budget"
+               class="nav-item {'active' if current_page == 'budget' else ''}">
+               💰
+            </a>
+
+            <a href="?page=analytics"
+               class="nav-item {'active' if current_page == 'analytics' else ''}">
+               📊
+            </a>
+
+        </div>
+    </div>
+    """,
     unsafe_allow_html=True,
 )
 
@@ -265,21 +232,31 @@ st.markdown(
 # DASHBOARD
 # =========================
 
-if selected_tab == "dashboard":
+if page == "Dashboard":
 
     st.title("📊 Dashboard")
 
     if transactions_df.empty:
 
-        st.warning("No transaction data yet.")
+        st.warning(
+            "No transaction data yet."
+        )
+
         st.stop()
 
     current_month = datetime.now().month
     current_year = datetime.now().year
 
     current_df = transactions_df[
-        (transactions_df["date"].dt.month == current_month)
-        & (transactions_df["date"].dt.year == current_year)
+        (
+            transactions_df["date"].dt.month
+            == current_month
+        )
+        &
+        (
+            transactions_df["date"].dt.year
+            == current_year
+        )
     ]
 
     income = current_df[
@@ -292,11 +269,7 @@ if selected_tab == "dashboard":
 
     saving = income - expense
 
-    transaction_count = len(current_df)
-
-    # =========================
-    # METRICS
-    # =========================
+    total_transactions = len(current_df)
 
     col1, col2 = st.columns(2)
 
@@ -307,113 +280,96 @@ if selected_tab == "dashboard":
             f"Rp {income:,.0f}",
         )
 
-    with col2:
-
         st.metric(
             "💸 Expense",
             f"Rp {expense:,.0f}",
         )
 
-    col3, col4 = st.columns(2)
-
-    with col3:
+    with col2:
 
         st.metric(
             "🏦 Saving",
             f"Rp {saving:,.0f}",
         )
 
-    with col4:
-
         st.metric(
             "🧾 Transactions",
-            transaction_count,
+            total_transactions,
         )
 
     st.divider()
 
-    # =========================
-    # ACCOUNT USAGE
-    # =========================
+    st.subheader("📈 Expense Trend")
+
+    expense_daily = (
+        current_df[
+            current_df["category"] == "expense"
+        ]
+        .groupby("date")["amount"]
+        .sum()
+    )
+
+    st.line_chart(expense_daily)
+
+    st.divider()
 
     st.subheader("🏦 Account Usage")
 
-    if (
-        "account" in current_df.columns
-        and not current_df.empty
-    ):
+    account_usage = account_summary(
+        current_df
+    )
 
-        account_summary = (
-            current_df.groupby("account")
-            .agg(
-                total_amount=("amount", "sum"),
-                total_transactions=("account", "count"),
-            )
-            .reset_index()
-            .sort_values(
-                "total_amount",
-                ascending=False,
-            )
-        )
-
-        account_summary["total_amount"] = (
-            account_summary["total_amount"]
-            .apply(
-                lambda x: f"Rp {x:,.0f}"
-            )
-        )
-
-        st.dataframe(
-            account_summary,
-            use_container_width=True,
-            hide_index=True,
-        )
+    st.dataframe(
+        account_usage,
+        use_container_width=True,
+    )
 
     st.divider()
 
-    # =========================
-    # RECENT TRANSACTIONS
-    # =========================
-
     st.subheader("🧾 Recent Transactions")
 
-    recent_df = current_df.sort_values(
+    display_df = current_df.sort_values(
         "date",
         ascending=False,
     )
 
     st.dataframe(
-        recent_df,
+        display_df,
         use_container_width=True,
-        hide_index=True,
     )
 
 # =========================
 # ADD TRANSACTION
 # =========================
 
-elif selected_tab == "add":
+elif page == "Add Transaction":
 
     st.title("➕ Add Transaction")
+
+    if "add_success" not in st.session_state:
+        st.session_state.add_success = False
+
+    if st.session_state.add_success:
+
+        st.success(
+            "Transaction added successfully!"
+        )
+
+        st.session_state.add_success = False
 
     with st.form(
         "add_transaction_form",
         clear_on_submit=True,
     ):
 
-        date = st.date_input("Date")
+        date = st.date_input(
+            "Date"
+        )
 
         transaction_name = st.selectbox(
             "Transaction Name",
             transaction_names_df[
                 "name"
-            ].tolist(),
-        )
-
-        account = st.selectbox(
-            "Account",
-            accounts_df[
-                "account_name"
             ].tolist(),
         )
 
@@ -425,6 +381,13 @@ elif selected_tab == "add":
                 "transfer/topup",
                 "cash withdrawal",
             ],
+        )
+
+        account = st.selectbox(
+            "Account",
+            accounts_df[
+                "account_name"
+            ].tolist(),
         )
 
         amount = st.number_input(
@@ -447,17 +410,15 @@ elif selected_tab == "add":
                 {
                     "date": str(date),
                     "name": transaction_name,
-                    "account": account,
                     "category": category,
+                    "account": account,
                     "amount": int(amount),
                     "description": description,
                     "created_at": datetime.now().isoformat(),
                 }
             )
 
-            st.success(
-                "✅ Transaction added successfully!"
-            )
+            st.session_state.add_success = True
 
             st.rerun()
 
@@ -465,18 +426,21 @@ elif selected_tab == "add":
 # EDIT TRANSACTION
 # =========================
 
-elif selected_tab == "edit":
+elif page == "Edit Transaction":
 
     st.title("✏️ Edit Transaction")
 
     if transactions_df.empty:
 
-        st.warning("No transaction data.")
+        st.warning(
+            "No transaction data."
+        )
+
         st.stop()
 
     transactions_df["label"] = (
         transactions_df["date"]
-        .astype(str)
+        .dt.strftime("%Y-%m-%d")
         + " | "
         + transactions_df["name"]
         + " | Rp "
@@ -503,9 +467,7 @@ elif selected_tab == "edit":
 
         edit_date = st.date_input(
             "Date",
-            pd.to_datetime(
-                selected_row["date"]
-            ),
+            value=selected_row["date"],
         )
 
         edit_name = st.selectbox(
@@ -514,11 +476,19 @@ elif selected_tab == "edit":
                 "name"
             ].tolist(),
             index=transaction_names_df[
-                transaction_names_df[
-                    "name"
-                ]
+                transaction_names_df["name"]
                 == selected_row["name"]
             ].index[0],
+        )
+
+        edit_category = st.selectbox(
+            "Category",
+            [
+                "expense",
+                "income",
+                "transfer/topup",
+                "cash withdrawal",
+            ],
         )
 
         account_list = accounts_df[
@@ -531,38 +501,17 @@ elif selected_tab == "edit":
             else account_list[0]
         )
 
-        account_index = (
-            account_list.index(current_account)
-            if current_account in account_list
-            else 0
-        )
-
         edit_account = st.selectbox(
             "Account",
             account_list,
-            index=account_index,
-        )
-
-        category_options = [
-            "expense",
-            "income",
-            "transfer/topup",
-            "cash withdrawal",
-        ]
-
-        category_index = (
-            category_options.index(
-                selected_row["category"]
-            )
-            if selected_row["category"]
-            in category_options
-            else 0
-        )
-
-        edit_category = st.selectbox(
-            "Category",
-            category_options,
-            index=category_index,
+            index=(
+                account_list.index(
+                    current_account
+                )
+                if current_account
+                in account_list
+                else 0
+            ),
         )
 
         edit_amount = st.number_input(
@@ -570,6 +519,7 @@ elif selected_tab == "edit":
             value=int(
                 selected_row["amount"]
             ),
+            step=1000,
         )
 
         edit_description = st.text_area(
@@ -592,15 +542,15 @@ elif selected_tab == "edit":
                 {
                     "date": str(edit_date),
                     "name": edit_name,
-                    "account": edit_account,
                     "category": edit_category,
+                    "account": edit_account,
                     "amount": int(edit_amount),
                     "description": edit_description,
                 },
             )
 
             st.success(
-                "✅ Transaction updated successfully!"
+                "Transaction updated successfully!"
             )
 
             st.rerun()
@@ -609,18 +559,17 @@ elif selected_tab == "edit":
 # BUDGETING
 # =========================
 
-elif selected_tab == "budget":
+elif page == "Budgeting":
 
     st.title("🎯 Budgeting")
 
     st.subheader(
-        "Current Budget Setup"
+        "Current Budget"
     )
 
     st.dataframe(
         budget_df,
         use_container_width=True,
-        hide_index=True,
     )
 
     st.divider()
@@ -637,12 +586,10 @@ elif selected_tab == "budget":
             ].tolist(),
         )
 
-        monthly_budget = (
-            st.number_input(
-                "Monthly Budget",
-                min_value=0,
-                step=100000,
-            )
+        monthly_budget = st.number_input(
+            "Monthly Budget",
+            min_value=0,
+            step=100000,
         )
 
         budget_submit = (
@@ -659,7 +606,7 @@ elif selected_tab == "budget":
             )
 
             st.success(
-                "✅ Budget updated successfully!"
+                "Budget updated successfully!"
             )
 
             st.rerun()
@@ -668,7 +615,7 @@ elif selected_tab == "budget":
 # ANALYTICS
 # =========================
 
-elif selected_tab == "analytics":
+elif page == "Analytics":
 
     st.title("📈 Analytics")
 
@@ -697,7 +644,6 @@ elif selected_tab == "analytics":
         st.dataframe(
             daily,
             use_container_width=True,
-            hide_index=True,
         )
 
     with tab2:
@@ -705,7 +651,6 @@ elif selected_tab == "analytics":
         st.dataframe(
             weekly,
             use_container_width=True,
-            hide_index=True,
         )
 
     with tab3:
@@ -713,7 +658,6 @@ elif selected_tab == "analytics":
         st.dataframe(
             monthly,
             use_container_width=True,
-            hide_index=True,
         )
 
     st.divider()
@@ -730,14 +674,4 @@ elif selected_tab == "analytics":
     st.dataframe(
         budget_actual,
         use_container_width=True,
-        hide_index=True,
     )
-
-# =========================
-# BOTTOM SPACE
-# =========================
-
-st.markdown(
-    '<div class="bottom-space"></div>',
-    unsafe_allow_html=True,
-)
