@@ -6,6 +6,7 @@ from datetime import datetime
 import pandas as pd
 import plotly.express as px
 import streamlit as st
+from streamlit_option_menu import option_menu
 
 from services.sheets_service import (
     get_transactions,
@@ -92,22 +93,27 @@ budget_df = get_budget_data()
 accounts_df = get_accounts()
 
 # =========================
-# SIDEBAR
+# BOTTOM NAVIGATION
 # =========================
 
-st.sidebar.title(
-    "💰 GFams Finance Tracker"
-)
-
-page = st.sidebar.radio(
-    "Navigation",
-    [
+page = option_menu(
+    menu_title=None,
+    options=[
         "Dashboard",
-        "Add Transaction",
-        "Edit Transaction",
-        "Budgeting",
+        "Add",
+        "Edit",
+        "Budget",
         "Analytics",
     ],
+    icons=[
+        "house",
+        "plus-circle",
+        "pencil-square",
+        "wallet2",
+        "bar-chart",
+    ],
+    orientation="horizontal",
+    default_index=0,
 )
 
 # =========================
@@ -355,7 +361,7 @@ if page == "Dashboard":
 # ADD TRANSACTION
 # =========================
 
-elif page == "Add Transaction":
+elif page == "Add":
 
     st.title(
         "➕ Add Transaction"
@@ -442,7 +448,7 @@ elif page == "Add Transaction":
 # EDIT TRANSACTION
 # =========================
 
-elif page == "Edit Transaction":
+elif page == "Edit":
 
     st.title(
         "✏️ Edit Transaction"
@@ -627,7 +633,7 @@ elif page == "Edit Transaction":
 # BUDGETING
 # =========================
 
-elif page == "Budgeting":
+elif page == "Budget":
 
     st.title("🎯 Budgeting")
 
